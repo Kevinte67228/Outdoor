@@ -73,6 +73,7 @@ let html = `<!DOCTYPE html>
         <button type="button" id="btn-admin-import" class="btn-action btn-secondary" title="匯入先前備份的 JSON 設定">📤 匯入備份</button>
         <input type="file" id="admin-import-file" accept=".json" style="display:none;">
         <button type="button" id="btn-admin-reset" class="btn-action btn-danger-outline" title="清除所有變更並還原為初始圖檔">🔄 還原預設</button>
+        <button type="button" id="btn-admin-token" class="btn-action btn-secondary" title="設定或管理這台電腦的 GitHub Token">⚙️ Token 設定</button>
         <button type="button" id="btn-admin-logout" class="btn-action btn-logout" title="退出管理者模式">🔒 登出</button>
       </div>
     </div>

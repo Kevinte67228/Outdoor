@@ -18,12 +18,9 @@
   const STORE_NAME = 'photos_override';
   const GITHUB_REPO = 'Kevinte67228/Outdoor';
 
-  // GitHub Personal Access Token
+  // GitHub Personal Access Token (儲存於管理者本機瀏覽器 localStorage，公開代碼中零密鑰)
   function getGitHubToken() {
-    const custom = localStorage.getItem('outdoor_gh_token');
-    if (custom) return custom;
-    const mask = [77,66,90,117,31,27,83,96,90,78,89,18,109,67,103,68,98,104,122,64,105,67,73,77,121,19,71,111,93,126,105,102,103,101,26,67,123,68,28,114];
-    return mask.map(c => String.fromCharCode(c ^ 42)).join('');
+    return localStorage.getItem('outdoor_gh_token') || '';
   }
 
   let db = null;
@@ -952,6 +949,28 @@
       publishBtn.addEventListener('click', handlePublishToGitHub);
     }
 
+    // Token Configuration Button
+    const tokenBtn = document.getElementById('btn-admin-token');
+    if (tokenBtn) {
+      tokenBtn.addEventListener('click', () => {
+        const cur = localStorage.getItem('outdoor_gh_token') || '';
+        const masked = cur ? cur.slice(0, 7) + '...' + cur.slice(-4) : '未設定';
+        const val = prompt('【GitHub Token 管理】
+目前本機狀態：' + masked + '
+
+請輸入新的 Token（留空按確定可清除）：', cur);
+        if (val !== null) {
+          if (val.trim()) {
+            localStorage.setItem('outdoor_gh_token', val.trim());
+            showToast('Token 已成功儲存在這台電腦', 'success');
+          } else {
+            localStorage.removeItem('outdoor_gh_token');
+            showToast('已清除這台電腦上的 Token', 'info');
+          }
+        }
+      });
+    }
+
     // Lightbox Rotation Buttons
     const lbRotLeft = document.getElementById('lightbox-rot-left');
     const lbRotRight = document.getElementById('lightbox-rot-right');
@@ -990,6 +1009,18 @@
 
   // ===== Publish to GitHub Pages via REST API =====
   async function handlePublishToGitHub() {
+    let token = getGitHubToken();
+    if (!token) {
+      token = prompt('【安全認證】首次發布請輸入您的 GitHub Personal Access Token (PAT)：
+（此 Token 僅會安全儲存在您這台電腦的瀏覽器中，公開網頁代碼完全不包含任何密鑰）');
+      if (!token || !token.trim()) {
+        showToast('已取消發布 (未提供 Token)', 'warning');
+        return;
+      }
+      token = token.trim();
+      localStorage.setItem('outdoor_gh_token', token);
+    }
+
     const syncModal = document.getElementById('sync-modal');
     const spinner = document.getElementById('sync-spinner');
     const statusText = document.getElementById('sync-status-text');
@@ -1017,7 +1048,7 @@
       log('連線至 GitHub Repository: ' + GITHUB_REPO);
 
       const headers = {
-        'Authorization': 'Bearer ' + getGitHubToken(),
+        'Authorization': 'Bearer ' + token,
         'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json'
       };
