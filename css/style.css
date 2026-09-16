@@ -1,0 +1,445 @@
+/* ===== Reset & Base ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', sans-serif;
+  background: #f5f6fa;
+  color: #2d3436;
+  padding: 20px;
+}
+
+/* ===== Header ===== */
+.page-header {
+  background: linear-gradient(135deg, #0984e3, #00b894);
+  color: #fff;
+  padding: 22px 30px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(9, 132, 227, 0.15);
+}
+
+.page-header h1 { font-size: 24px; font-weight: 700; }
+.page-header .subtitle { font-size: 13px; opacity: 0.88; margin-top: 4px; }
+.page-header .date-badge {
+  background: rgba(255,255,255,0.22);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ===== Stats bar ===== */
+.stats-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  font-size: 13px;
+  color: #636e72;
+}
+
+.stat-card strong {
+  color: #2d3436;
+  font-size: 17px;
+  margin-right: 4px;
+}
+
+/* ===== Filter bar ===== */
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 250px;
+  padding: 10px 16px;
+  border: 2px solid #dfe6e9;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.search-input:focus { border-color: #0984e3; }
+
+.type-filter {
+  padding: 10px 16px;
+  border: 2px solid #dfe6e9;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ===== Table Container ===== */
+.table-container {
+  overflow: auto;
+  max-height: calc(100vh - 190px);
+  min-height: 400px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  position: relative;
+}
+
+/* ===== Table ===== */
+.billboard-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 1950px;
+  font-size: 13px;
+}
+
+.billboard-table thead {
+  background: #2d3436;
+  color: #fff;
+}
+
+.billboard-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #2d3436;
+  padding: 12px 10px;
+  text-align: center;
+  font-weight: 600;
+  white-space: nowrap;
+  border-right: 1px solid #444;
+  border-bottom: 2px solid #1e2528;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+}
+
+.billboard-table thead th:last-child { border-right: none; }
+
+.th-sub {
+  font-size: 11px;
+  opacity: 0.75;
+  font-weight: 400;
+}
+
+/* Sort button styles */
+.sort-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #dfe6e9;
+  font-size: 13px;
+  cursor: pointer;
+  margin-left: 4px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: all 0.2s;
+  vertical-align: middle;
+}
+
+.sort-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.sort-btn.active {
+  background: #0984e3;
+  color: #fff;
+  border-color: #74b9ff;
+  font-weight: bold;
+}
+
+.badge-county {
+  display: inline-block;
+  padding: 3px 8px;
+  background: #e3f2fd;
+  color: #1565c0;
+  font-weight: 600;
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.store-county {
+  white-space: nowrap;
+  min-width: 75px;
+}
+
+
+.billboard-table tbody td {
+  padding: 10px 8px;
+  text-align: center;
+  border-right: 1px solid #f0f0f0;
+  vertical-align: middle;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.billboard-table tbody td:last-child { border-right: none; }
+
+/* Sub-row divider within the same multi-location entry */
+.billboard-table tbody tr.entry-inner-row td {
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+/* Standard consistent bottom separator across ALL columns for every store entry */
+.billboard-table tbody tr.entry-last-row td,
+.billboard-table tbody td[rowspan] {
+  border-bottom: 2px solid #cbd5e1 !important;
+}
+
+.billboard-table tbody tr:hover td {
+  background: #e8f4fd !important;
+}
+
+/* ===== Column styles ===== */
+.col-new {
+  width: 60px;
+  white-space: nowrap;
+}
+
+.badge-new-col {
+  display: inline-block;
+  background: #00b894;
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.store-code {
+  font-weight: 700;
+  color: #0984e3;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.store-name {
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.store-address {
+  font-size: 12px;
+  color: #636e72;
+  text-align: left;
+  min-width: 140px;
+  max-width: 210px;
+  line-height: 1.4;
+}
+
+.ad-type {
+  white-space: nowrap;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.type-canvas {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.type-led {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.type-column {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.type-poster {
+  background: #fce7f3;
+  color: #be185d;
+}
+
+.bb-location {
+  font-weight: 700;
+  font-size: 15px;
+  color: #d63031;
+}
+
+.dimension {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  color: #2d3436;
+}
+
+.dimension-led {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  color: #4f46e5;
+  font-weight: 600;
+}
+
+.dimension-bleed {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  color: #00b894;
+  font-weight: 600;
+}
+
+.rental {
+  font-weight: 700;
+  color: #e17055;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.note {
+  font-size: 11px;
+  color: #e17055;
+  display: block;
+  margin-top: 4px;
+}
+
+.no-data {
+  color: #ccc;
+  font-size: 14px;
+}
+
+/* ===== Photo Thumbnails ===== */
+.photo-cell {
+  min-width: 100px;
+  max-width: 160px;
+}
+
+.photo-group {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.photo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.thumb {
+  width: 90px;
+  height: 62px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  background: #f1f2f6;
+}
+
+.thumb:hover {
+  border-color: #0984e3;
+  transform: scale(1.06);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  z-index: 5;
+  position: relative;
+}
+
+.visual-thumb {
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.map-thumb {
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+/* ===== Lightbox ===== */
+.lightbox-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.88);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.lightbox-overlay.active { display: flex; }
+
+.lightbox-content {
+  position: relative;
+  max-width: 92vw;
+  max-height: 92vh;
+}
+
+.lightbox-content img {
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.lightbox-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  color: #fff;
+  font-size: 32px;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  transition: background 0.2s;
+}
+
+.lightbox-close:hover { background: rgba(255,255,255,0.3); }
+
+.lightbox-caption {
+  color: #fff;
+  text-align: center;
+  margin-top: 12px;
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+/* ===== Search/Filter hidden ===== */
+tr.hidden-row { display: none !important; }
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  body { padding: 10px; }
+  .page-header { flex-direction: column; gap: 10px; text-align: center; padding: 16px; }
+  .page-header h1 { font-size: 18px; }
+  .thumb { width: 65px; height: 45px; }
+}
