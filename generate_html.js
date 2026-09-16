@@ -176,35 +176,35 @@ entries.forEach((e) => {
     // Merged columns (First row only)
     if (isFirst) {
       // 1. 新增 (獨立欄位)
-      html += `          <td class="col-new" rowspan="${rowCount}">${isNew ? '<span class="badge-new-col">新增</span>' : '<span class="no-data">—</span>'}</td>\n`;
+      html += `          <td class="col-new editable-cell" rowspan="${rowCount}">${isNew ? '<span class="badge-new-col" title="點擊切換新增狀態">新增</span>' : '<span class="no-data" title="點擊切換新增狀態">—</span>'}</td>\n`;
       // 2. 店碼
-      html += `          <td class="store-code" rowspan="${rowCount}">${code}</td>\n`;
+      html += `          <td class="store-code editable-cell" rowspan="${rowCount}">${code}</td>\n`;
       // 3. 店名
-      html += `          <td class="store-name" rowspan="${rowCount}">${name}</td>\n`;
+      html += `          <td class="store-name editable-cell" rowspan="${rowCount}">${name}</td>\n`;
       // 4. 縣市 (根據地址)
-      html += `          <td class="store-county" rowspan="${rowCount}">${county !== '—' ? '<span class="badge-county">' + county + '</span>' : '<span class="no-data">—</span>'}</td>\n`;
+      html += `          <td class="store-county editable-cell" rowspan="${rowCount}">${county !== '—' ? '<span class="badge-county">' + county + '</span>' : '<span class="no-data">—</span>'}</td>\n`;
       // 5. 地址
-      html += `          <td class="store-address" rowspan="${rowCount}">${addr}${e.notes ? '<br><span class="note">📌 ' + e.notes + '</span>' : ''}</td>\n`;
+      html += `          <td class="store-address editable-cell" rowspan="${rowCount}">${addr}${e.notes ? '<br><span class="note">📌 ' + e.notes + '</span>' : ''}</td>\n`;
       // 6. 廣告類型
-      html += `          <td class="ad-type" rowspan="${rowCount}"><span class="type-badge ${badgeClass}">${adType}</span></td>\n`;
+      html += `          <td class="ad-type editable-cell" rowspan="${rowCount}"><span class="type-badge ${badgeClass}" title="點擊切換廣告類型">${adType}</span></td>\n`;
     }
 
     // 7. BB Location
-    html += `          <td class="bb-location">${loc}</td>\n`;
+    html += `          <td class="bb-location editable-cell"><span class="bb-text">${loc}</span><button class="loc-del-btn" type="button" title="刪除此版位">&times;</button>${isLast ? '<button class="btn-add-loc" type="button" title="新增一個版位 (如 A,B,C ➜ D)">➕ 加版位</button>' : ''}</td>\n`;
     // 8. 導光板 W
-    html += `          <td class="dimension-led">${r.ledW || '—'}</td>\n`;
+    html += `          <td class="dimension-led editable-cell">${r.ledW || '—'}</td>\n`;
     // 9. 導光板 H
-    html += `          <td class="dimension-led">${r.ledH || '—'}</td>\n`;
+    html += `          <td class="dimension-led editable-cell">${r.ledH || '—'}</td>\n`;
     // 10. 出血 W
-    html += `          <td class="dimension-bleed">${r.bldW || '—'}</td>\n`;
+    html += `          <td class="dimension-bleed editable-cell">${r.bldW || '—'}</td>\n`;
     // 11. 出血 H
-    html += `          <td class="dimension-bleed">${r.bldH || '—'}</td>\n`;
+    html += `          <td class="dimension-bleed editable-cell">${r.bldH || '—'}</td>\n`;
     // 12. 可見 W
-    html += `          <td class="dimension">${r.visW || '—'}</td>\n`;
+    html += `          <td class="dimension editable-cell">${r.visW || '—'}</td>\n`;
     // 13. 可見 H
-    html += `          <td class="dimension">${r.visH || '—'}</td>\n`;
+    html += `          <td class="dimension editable-cell">${r.visH || '—'}</td>\n`;
     // 14. 租金
-    html += `          <td class="rental">${r.rental || '—'}</td>\n`;
+    html += `          <td class="rental editable-cell">${r.rental || '—'}</td>\n`;
 
     // 15. 門市外觀 (原本照片, Merged)
     if (isFirst) {
@@ -213,7 +213,9 @@ entries.forEach((e) => {
         html += `            <div class="photo-group">\n`;
         origPhotos.forEach(img => {
           html += `              <div class="photo-item">\n`;
-          html += `                <img class="thumb" src="images/${img}" data-full="images/${img}" data-caption="${code} ${name} (${adType}) — 門市外觀實景照" alt="${code} 門市外觀" loading="lazy">\n`;
+          html += `                <img class="thumb" src="images/${img}" data-full="images/${img}" data-caption="${code} ${name} (${adType}) — 門市外觀實景照" alt="${code} 門市外觀" loading="lazy" data-rotate="0">\n`;
+          html += `                <button class="photo-rot-btn photo-rot-left" type="button" title="向左旋轉90度">↺</button>\n`;
+          html += `                <button class="photo-rot-btn photo-rot-right" type="button" title="向右旋轉90度">↻</button>\n`;
           html += `                <button class="photo-del-btn" type="button" title="刪除此圖檔">&times;</button>\n`;
           html += `              </div>\n`;
         });
@@ -229,7 +231,9 @@ entries.forEach((e) => {
         html += `            <div class="photo-group">\n`;
         visualDesigns.forEach(img => {
           html += `              <div class="photo-item">\n`;
-          html += `                <img class="thumb visual-thumb" src="images/${img}" data-full="images/${img}" data-caption="${code} ${name} (${adType}) — 廣告海報/設計稿" alt="${code} 廣告海報" loading="lazy">\n`;
+          html += `                <img class="thumb visual-thumb" src="images/${img}" data-full="images/${img}" data-caption="${code} ${name} (${adType}) — 廣告海報/設計稿" alt="${code} 廣告海報" loading="lazy" data-rotate="0">\n`;
+          html += `                <button class="photo-rot-btn photo-rot-left" type="button" title="向左旋轉90度">↺</button>\n`;
+          html += `                <button class="photo-rot-btn photo-rot-right" type="button" title="向右旋轉90度">↻</button>\n`;
           html += `                <button class="photo-del-btn" type="button" title="刪除此圖檔">&times;</button>\n`;
           html += `              </div>\n`;
         });
@@ -256,7 +260,9 @@ entries.forEach((e) => {
       if (selectedCurr.length > 0) {
         selectedCurr.forEach(img => {
           html += `              <div class="photo-item">\n`;
-          html += `                <img class="thumb" src="images/${img}" data-full="images/${img}" data-caption="${code} ${name} ${loc} (${adType}) — 2026現況照片" alt="${code} 2026現況" loading="lazy">\n`;
+          html += `                <img class="thumb" src="images/${img}" data-full="images/${img}" data-caption="${code} ${name} ${loc} (${adType}) — 2026現況照片" alt="${code} 2026現況" loading="lazy" data-rotate="0">\n`;
+          html += `                <button class="photo-rot-btn photo-rot-left" type="button" title="向左旋轉90度">↺</button>\n`;
+          html += `                <button class="photo-rot-btn photo-rot-right" type="button" title="向右旋轉90度">↻</button>\n`;
           html += `                <button class="photo-del-btn" type="button" title="刪除此圖檔">&times;</button>\n`;
           html += `              </div>\n`;
         });
@@ -276,7 +282,9 @@ entries.forEach((e) => {
         html += `            <div class="photo-group">\n`;
         googleMaps.forEach(img => {
           html += `              <div class="photo-item">\n`;
-          html += `                <img class="thumb map-thumb" src="images/${img}" data-full="images/${img}" data-caption="${code} ${name} (${adType}) — Google地圖定位截圖" alt="${code} 定位截圖" loading="lazy">\n`;
+          html += `                <img class="thumb map-thumb" src="images/${img}" data-full="images/${img}" data-caption="${code} ${name} (${adType}) — Google地圖定位截圖" alt="${code} 定位截圖" loading="lazy" data-rotate="0">\n`;
+          html += `                <button class="photo-rot-btn photo-rot-left" type="button" title="向左旋轉90度">↺</button>\n`;
+          html += `                <button class="photo-rot-btn photo-rot-right" type="button" title="向右旋轉90度">↻</button>\n`;
           html += `                <button class="photo-del-btn" type="button" title="刪除此圖檔">&times;</button>\n`;
           html += `              </div>\n`;
         });
@@ -300,7 +308,11 @@ html += `      </tbody>
   <div class="lightbox-overlay" id="lightbox-overlay">
     <div class="lightbox-content">
       <div class="lightbox-close">&times;</div>
-      <img id="lightbox-img" src="" alt="放大檢視">
+      <img id="lightbox-img" src="" alt="放大檢視" data-rotate="0">
+      <div class="lightbox-toolbar">
+        <button type="button" id="lightbox-rot-left" class="lb-rot-btn" title="向左旋轉 90°">↺ 向左 90°</button>
+        <button type="button" id="lightbox-rot-right" class="lb-rot-btn" title="向右旋轉 90°">↻ 向右 90°</button>
+      </div>
       <div class="lightbox-caption" id="lightbox-caption"></div>
     </div>
   </div>

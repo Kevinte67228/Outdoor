@@ -1,6 +1,12 @@
 /**
  * Outdoor Admin Module
- * 密碼驗證 (291) + 圖片拖曳 (跨欄位移動 & 桌面拖入) + 刪除 + 本機 IndexedDB 暫存 + GitHub Pages 一鍵發布
+ * 1. 密碼驗證 (291)
+ * 2. 圖片拖曳 (跨欄位 A->B 移動 & 桌面拖入)
+ * 3. 圖片刪除 & 向左/向右 90 度旋轉
+ * 4. 全欄位即時編輯 (店碼、店名、縣市、地址、類型、BB代碼、規格尺寸、租金等)
+ * 5. 動態版位增刪 (如 ABC 擴增 D 版位、或刪除特定版位)
+ * 6. 本機 IndexedDB 暫存
+ * 7. GitHub Pages 一鍵發布
  */
 
 (function() {
@@ -8,10 +14,11 @@
 
   const ADMIN_PWD = '291';
   const DB_NAME = 'OutdoorAdminDB';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const STORE_NAME = 'photos_override';
   const GITHUB_REPO = 'Kevinte67228/Outdoor';
-  // GitHub Personal Access Token for direct deployment to GitHub Pages
+
+  // GitHub Personal Access Token
   function getGitHubToken() {
     const custom = localStorage.getItem('outdoor_gh_token');
     if (custom) return custom;
@@ -24,6 +31,7 @@
   let changeCount = 0;
   let draggedItem = null;
   let draggedSourceCell = null;
+  let currentLightboxImgEl = null;
 
   // ===== IndexedDB Utilities =====
   function openDB() {
@@ -119,6 +127,16 @@
     }, 3200);
   }
 
+  function incrementChangeCount() {
+    changeCount++;
+    const badge = document.getElementById('admin-change-badge');
+    const countEl = document.getElementById('admin-change-count');
+    if (badge && countEl) {
+      badge.style.display = 'inline-flex';
+      countEl.textContent = changeCount;
+    }
+  }
+
   // ===== Extract Photos from Cell DOM =====
   function extractPhotosFromCell(cell) {
     const items = cell.querySelectorAll('.photo-item');
@@ -131,6 +149,7 @@
           full: img.getAttribute('data-full') || img.getAttribute('src') || '',
           caption: img.getAttribute('data-caption') || '',
           alt: img.getAttribute('alt') || '',
+          rotate: parseInt(img.getAttribute('data-rotate') || '0', 10),
           customClass: img.className.replace('thumb', '').trim()
         });
       }
@@ -154,16 +173,6 @@
     incrementChangeCount();
   }
 
-  function incrementChangeCount() {
-    changeCount++;
-    const badge = document.getElementById('admin-change-badge');
-    const countEl = document.getElementById('admin-change-count');
-    if (badge && countEl) {
-      badge.style.display = 'inline-flex';
-      countEl.textContent = changeCount;
-    }
-  }
-
   // ===== Render Cell Photos =====
   function renderCellPhotos(cell, photos) {
     if (!photos || photos.length === 0) {
@@ -180,14 +189,28 @@
     }
 
     photos.forEach(p => {
-      const item = createPhotoItemElement(p.src, p.full, p.caption, p.alt, p.customClass);
+      const item = createPhotoItemElement(p.src, p.full, p.caption, p.alt, p.customClass, p.rotate);
       group.appendChild(item);
     });
   }
 
+  // ===== Apply Rotation Styling =====
+  function applyRotationToImg(img, deg) {
+    deg = (deg % 360 + 360) % 360;
+    img.setAttribute('data-rotate', deg);
+    if (deg === 90 || deg === 270) {
+      img.style.transform = 'rotate(' + deg + 'deg) scale(0.68)';
+    } else if (deg === 180) {
+      img.style.transform = 'rotate(180deg)';
+    } else {
+      img.style.transform = '';
+    }
+  }
+
   // ===== Create Photo Item DOM =====
-  function createPhotoItemElement(src, full, caption, alt, customClass) {
+  function createPhotoItemElement(src, full, caption, alt, customClass, rotate) {
     customClass = customClass || '';
+    rotate = parseInt(rotate || 0, 10);
     const item = document.createElement('div');
     item.className = 'photo-item';
     if (isAdmin) {
@@ -201,18 +224,11 @@
     img.setAttribute('data-caption', caption || '');
     img.setAttribute('alt', alt || '門市相片');
     img.setAttribute('loading', 'lazy');
+    applyRotationToImg(img, rotate);
 
     // Click for Lightbox
     img.addEventListener('click', () => {
-      const overlay = document.getElementById('lightbox-overlay');
-      const lightboxImg = document.getElementById('lightbox-img');
-      const lightboxCaption = document.getElementById('lightbox-caption');
-      if (overlay && lightboxImg) {
-        lightboxImg.src = img.getAttribute('data-full') || img.src;
-        if (lightboxCaption) lightboxCaption.textContent = img.getAttribute('data-caption') || '';
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      }
+      openLightboxForImg(img);
     });
 
     // Delete Button
@@ -226,13 +242,71 @@
       handleDeletePhoto(item);
     });
 
+    // Rotate Left Button (↺)
+    const rotLeftBtn = document.createElement('button');
+    rotLeftBtn.className = 'photo-rot-btn photo-rot-left';
+    rotLeftBtn.type = 'button';
+    rotLeftBtn.title = '向左旋轉90度';
+    rotLeftBtn.innerHTML = '↺';
+    rotLeftBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleRotatePhoto(item, -90);
+    });
+
+    // Rotate Right Button (↻)
+    const rotRightBtn = document.createElement('button');
+    rotRightBtn.className = 'photo-rot-btn photo-rot-right';
+    rotRightBtn.type = 'button';
+    rotRightBtn.title = '向右旋轉90度';
+    rotRightBtn.innerHTML = '↻';
+    rotRightBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleRotatePhoto(item, 90);
+    });
+
     item.appendChild(img);
+    item.appendChild(rotLeftBtn);
+    item.appendChild(rotRightBtn);
     item.appendChild(delBtn);
 
     // Bind Drag events for item
     bindPhotoItemDragEvents(item);
 
     return item;
+  }
+
+  // ===== Open Lightbox Helper =====
+  function openLightboxForImg(img) {
+    const overlay = document.getElementById('lightbox-overlay');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxCaption = document.getElementById('lightbox-caption');
+    if (!overlay || !lightboxImg) return;
+
+    currentLightboxImgEl = img;
+    lightboxImg.src = img.getAttribute('data-full') || img.src;
+    const rot = parseInt(img.getAttribute('data-rotate') || '0', 10);
+    lightboxImg.setAttribute('data-rotate', rot);
+    lightboxImg.style.transform = rot ? 'rotate(' + rot + 'deg)' : '';
+
+    if (lightboxCaption) {
+      lightboxCaption.textContent = img.getAttribute('data-caption') || '';
+    }
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  // ===== Handle Photo Rotation =====
+  async function handleRotatePhoto(item, delta) {
+    const img = item.querySelector('img');
+    if (!img) return;
+
+    let cur = parseInt(img.getAttribute('data-rotate') || '0', 10);
+    cur = (cur + delta + 360) % 360;
+    applyRotationToImg(img, cur);
+
+    const cell = item.closest('.photo-cell');
+    if (cell) await persistCell(cell);
+    showToast('圖片已旋轉至 ' + cur + '°', 'info');
   }
 
   // ===== Handle Delete Photo =====
@@ -268,6 +342,7 @@
         full: img.getAttribute('data-full'),
         caption: img.getAttribute('data-caption'),
         alt: img.getAttribute('alt'),
+        rotate: img.getAttribute('data-rotate') || '0',
         customClass: img.className.replace('thumb', '').trim()
       };
       e.dataTransfer.setData('text/plain', JSON.stringify(data));
@@ -324,7 +399,7 @@
           const dataUrl = await readFileAsDataURL(file);
           const caption = targetStore + ' (' + targetColName + ') — 管理者上傳新圖';
           const alt = targetStore + ' ' + targetColName;
-          const newItem = createPhotoItemElement(dataUrl, dataUrl, caption, alt);
+          const newItem = createPhotoItemElement(dataUrl, dataUrl, caption, alt, '', 0);
           group.appendChild(newItem);
           addedCount++;
         }
@@ -336,13 +411,10 @@
 
       // Case 2: Moving existing photo from another cell (A -> B)
       if (draggedItem && draggedSourceCell) {
-        if (draggedSourceCell === cell) {
-          return;
-        }
+        if (draggedSourceCell === cell) return;
 
         const oldSourceCell = draggedSourceCell;
 
-        // Move DOM element
         let group = cell.querySelector('.photo-group');
         if (!group) {
           cell.innerHTML = '<div class="photo-group"></div>';
@@ -350,7 +422,6 @@
         }
         group.appendChild(draggedItem);
 
-        // Update image caption and alt to reflect new column context
         const img = draggedItem.querySelector('img');
         if (img) {
           const oldCaption = img.getAttribute('data-caption') || '';
@@ -360,13 +431,11 @@
           img.setAttribute('alt', targetStore + ' ' + targetColName);
         }
 
-        // Check if source cell became empty
         const oldGroup = oldSourceCell.querySelector('.photo-group');
         if (oldGroup && oldGroup.querySelectorAll('.photo-item').length === 0) {
           oldSourceCell.innerHTML = '<span class="no-data">—</span>';
         }
 
-        // Persist both cells
         await persistCell(oldSourceCell);
         await persistCell(cell);
 
@@ -384,7 +453,288 @@
     });
   }
 
-  // ===== Apply Stored IndexedDB Overrides on Page Load =====
+  // ===== Helper: Get All Rows for an Entry Block =====
+  function getEntryBlockRows(targetRow) {
+    let cur = targetRow;
+    while (cur && !cur.querySelector('.store-code')) {
+      cur = cur.previousElementSibling;
+    }
+    if (!cur) cur = targetRow;
+    const firstRow = cur;
+    const rows = [firstRow];
+
+    let next = firstRow.nextElementSibling;
+    while (next && !next.querySelector('.store-code') && next.tagName === 'TR') {
+      rows.push(next);
+      next = next.nextElementSibling;
+    }
+    return rows;
+  }
+
+  // ===== Location (BB) Add / Delete Logic =====
+  function bindLocationControls() {
+    const table = document.getElementById('main-table');
+    if (!table) return;
+
+    table.addEventListener('click', (e) => {
+      if (!isAdmin) return;
+
+      // Add Location Button Click
+      const addBtn = e.target.closest('.btn-add-loc');
+      if (addBtn) {
+        e.stopPropagation();
+        handleAddLocation(addBtn);
+        return;
+      }
+
+      // Delete Location Button Click
+      const delBtn = e.target.closest('.loc-del-btn');
+      if (delBtn) {
+        e.stopPropagation();
+        handleDeleteLocation(delBtn);
+        return;
+      }
+    });
+  }
+
+  function handleAddLocation(btn) {
+    const currentRow = btn.closest('tr');
+    if (!currentRow) return;
+
+    const blockRows = getEntryBlockRows(currentRow);
+    const firstRow = blockRows[0];
+    const lastRow = blockRows[blockRows.length - 1];
+
+    // Determine next letter
+    const locEls = blockRows.map(r => r.querySelector('.bb-text')).filter(Boolean);
+    let nextLoc = 'B';
+    if (locEls.length > 0) {
+      const lastText = locEls[locEls.length - 1].textContent.trim();
+      if (lastText.length === 1 && lastText >= 'A' && lastText < 'Z') {
+        nextLoc = String.fromCharCode(lastText.charCodeAt(0) + 1);
+      } else {
+        nextLoc = String.fromCharCode(65 + blockRows.length);
+      }
+    }
+
+    const inputLoc = prompt('請輸入新增的版位代碼：', nextLoc);
+    if (!inputLoc) return;
+    nextLoc = inputLoc.trim().toUpperCase();
+
+    // Increment rowspan on all merged cells in firstRow
+    const mergedCells = firstRow.querySelectorAll('.col-new, .store-code, .store-name, .store-county, .store-address, .ad-type, .photo-cell[data-col="exterior"], .photo-cell[data-col="visual"], .photo-cell[data-col="map"]');
+    mergedCells.forEach(cell => {
+      const cur = parseInt(cell.getAttribute('rowspan') || '1', 10);
+      cell.setAttribute('rowspan', cur + 1);
+    });
+
+    // Update lastRow classes & remove old add button
+    lastRow.classList.remove('entry-last-row');
+    lastRow.classList.add('entry-inner-row');
+    const oldAdd = lastRow.querySelector('.btn-add-loc');
+    if (oldAdd) oldAdd.remove();
+
+    // Construct new row
+    const newRow = document.createElement('tr');
+    newRow.className = 'entry-last-row';
+    newRow.dataset.store = firstRow.dataset.store || '';
+    newRow.dataset.name = firstRow.dataset.name || '';
+    newRow.dataset.county = firstRow.dataset.county || '';
+    newRow.dataset.addr = firstRow.dataset.addr || '';
+    newRow.dataset.type = firstRow.dataset.type || '';
+    newRow.dataset.new = firstRow.dataset.new || '';
+
+    newRow.innerHTML = 
+      '<td class="bb-location editable-cell"><span class="bb-text">' + nextLoc + '</span><button class="loc-del-btn" type="button" title="刪除此版位">&times;</button><button class="btn-add-loc" type="button" title="新增一個版位 (如 A,B,C ➜ D)">➕ 加版位</button></td>' +
+      '<td class="dimension-led editable-cell">—</td>' +
+      '<td class="dimension-led editable-cell">—</td>' +
+      '<td class="dimension-bleed editable-cell">—</td>' +
+      '<td class="dimension-bleed editable-cell">—</td>' +
+      '<td class="dimension editable-cell">—</td>' +
+      '<td class="dimension editable-cell">—</td>' +
+      '<td class="rental editable-cell">—</td>' +
+      '<td class="photo-cell" data-col="current" data-loc="' + nextLoc + '" data-store="' + (firstRow.dataset.store || '') + '" data-adtype="' + (firstRow.dataset.type || '') + '">' +
+        '<span class="no-data">—</span>' +
+      '</td>';
+
+    lastRow.parentNode.insertBefore(newRow, lastRow.nextSibling);
+
+    // Bind editable & drop
+    newRow.querySelectorAll('.editable-cell').forEach(cell => bindSingleEditableCell(cell));
+    const photoCell = newRow.querySelector('.photo-cell');
+    if (photoCell) bindCellDropEvents(photoCell);
+
+    incrementChangeCount();
+    showToast('已成功為 ' + (firstRow.dataset.store || '') + ' 新增版位 [' + nextLoc + ']', 'success');
+  }
+
+  function handleDeleteLocation(btn) {
+    const rowToDelete = btn.closest('tr');
+    if (!rowToDelete) return;
+
+    const blockRows = getEntryBlockRows(rowToDelete);
+    const locText = rowToDelete.querySelector('.bb-text') ? rowToDelete.querySelector('.bb-text').textContent.trim() : '';
+
+    if (blockRows.length === 1) {
+      if (!confirm('此門市僅有此單一版位，刪除將會移除整筆門市記錄，確定刪除嗎？')) return;
+      rowToDelete.remove();
+      incrementChangeCount();
+      showToast('已刪除整筆門市記錄', 'warning');
+      return;
+    }
+
+    if (!confirm('確定要刪除版位 [' + locText + '] 嗎？')) return;
+
+    const firstRow = blockRows[0];
+
+    if (rowToDelete === firstRow) {
+      // Row to delete is the first row! Move merged cells into secondRow
+      const secondRow = blockRows[1];
+      const mergedCells = Array.from(firstRow.querySelectorAll('.col-new, .store-code, .store-name, .store-county, .store-address, .ad-type'));
+      const exteriorCell = firstRow.querySelector('.photo-cell[data-col="exterior"]');
+      const visualCell = firstRow.querySelector('.photo-cell[data-col="visual"]');
+      const mapCell = firstRow.querySelector('.photo-cell[data-col="map"]');
+
+      // Prepend store-level cells to secondRow
+      mergedCells.reverse().forEach(cell => {
+        secondRow.insertBefore(cell, secondRow.firstChild);
+      });
+
+      // Insert exterior & visual before current
+      const currentCell = secondRow.querySelector('.photo-cell[data-col="current"]');
+      if (currentCell) {
+        if (visualCell) secondRow.insertBefore(visualCell, currentCell);
+        if (exteriorCell) secondRow.insertBefore(exteriorCell, visualCell || currentCell);
+      }
+
+      // Append map cell at end
+      if (mapCell) secondRow.appendChild(mapCell);
+
+      // Decrement rowspan on all merged cells
+      secondRow.querySelectorAll('.col-new, .store-code, .store-name, .store-county, .store-address, .ad-type, .photo-cell[data-col="exterior"], .photo-cell[data-col="visual"], .photo-cell[data-col="map"]').forEach(cell => {
+        const cur = parseInt(cell.getAttribute('rowspan') || '2', 10);
+        cell.setAttribute('rowspan', Math.max(cur - 1, 1));
+      });
+
+      rowToDelete.remove();
+
+    } else {
+      // Deleting a non-first row
+      firstRow.querySelectorAll('.col-new, .store-code, .store-name, .store-county, .store-address, .ad-type, .photo-cell[data-col="exterior"], .photo-cell[data-col="visual"], .photo-cell[data-col="map"]').forEach(cell => {
+        const cur = parseInt(cell.getAttribute('rowspan') || '2', 10);
+        cell.setAttribute('rowspan', Math.max(cur - 1, 1));
+      });
+
+      if (rowToDelete.classList.contains('entry-last-row') && blockRows.length >= 2) {
+        const newLastRow = blockRows[blockRows.length - 2];
+        newLastRow.classList.remove('entry-inner-row');
+        newLastRow.classList.add('entry-last-row');
+        const bbCell = newLastRow.querySelector('.bb-location');
+        if (bbCell && !bbCell.querySelector('.btn-add-loc')) {
+          const addBtn = document.createElement('button');
+          addBtn.className = 'btn-add-loc';
+          addBtn.type = 'button';
+          addBtn.title = '新增一個版位 (如 A,B,C ➜ D)';
+          addBtn.textContent = '➕ 加版位';
+          bbCell.appendChild(addBtn);
+        }
+      }
+
+      rowToDelete.remove();
+    }
+
+    incrementChangeCount();
+    showToast('已刪除版位 [' + locText + ']', 'warning');
+  }
+
+  // ===== Full Field Inline Editing =====
+  const AD_TYPES = ['帆布外招', '導光板', '包柱', '大圖輸出'];
+  const AD_TYPE_CLASSES = {
+    '帆布外招': 'type-canvas',
+    '導光板': 'type-led',
+    '包柱': 'type-column',
+    '大圖輸出': 'type-poster'
+  };
+
+  function bindEditableCells() {
+    document.querySelectorAll('.editable-cell').forEach(cell => {
+      bindSingleEditableCell(cell);
+    });
+  }
+
+  function bindSingleEditableCell(cell) {
+    // 1. New store toggle
+    if (cell.classList.contains('col-new')) {
+      cell.onclick = (e) => {
+        if (!isAdmin) return;
+        e.stopPropagation();
+        const row = cell.closest('tr');
+        const isCurrentNew = row.dataset.new === '新增';
+        const newStatus = !isCurrentNew;
+        row.dataset.new = newStatus ? '新增' : '';
+        cell.innerHTML = newStatus 
+          ? '<span class="badge-new-col" title="點擊切換新增狀態">新增</span>' 
+          : '<span class="no-data" title="點擊切換新增狀態">—</span>';
+        incrementChangeCount();
+        showToast('已切換為：' + (newStatus ? '新增門市' : '一般門市'), 'info');
+      };
+      return;
+    }
+
+    // 2. Ad Type Cycle
+    if (cell.classList.contains('ad-type')) {
+      cell.onclick = (e) => {
+        if (!isAdmin) return;
+        e.stopPropagation();
+        const row = cell.closest('tr');
+        const curType = row.dataset.type || '帆布外招';
+        let idx = AD_TYPES.indexOf(curType);
+        if (idx === -1) idx = 0;
+        const nextType = AD_TYPES[(idx + 1) % AD_TYPES.length];
+        const nextClass = AD_TYPE_CLASSES[nextType] || 'type-canvas';
+        row.dataset.type = nextType;
+        cell.innerHTML = '<span class="type-badge ' + nextClass + '" title="點擊切換廣告類型">' + nextType + '</span>';
+        incrementChangeCount();
+        showToast('已切換廣告類型為：' + nextType, 'info');
+      };
+      return;
+    }
+
+    // 3. Text Cells (Store Code, Name, County, Address, BB, Dimensions, Rental)
+    if (isAdmin) {
+      cell.setAttribute('contenteditable', 'true');
+    }
+
+    cell.onfocus = () => {
+      if (!isAdmin) return;
+      cell.dataset.origVal = cell.innerText.trim();
+    };
+
+    cell.onkeydown = (e) => {
+      if (!isAdmin) return;
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        cell.blur();
+      }
+    };
+
+    cell.onblur = () => {
+      if (!isAdmin) return;
+      const text = cell.innerText.trim();
+      const orig = cell.dataset.origVal || '';
+      if (text !== orig) {
+        const row = cell.closest('tr');
+        if (cell.classList.contains('store-code') && row) row.dataset.store = text;
+        if (cell.classList.contains('store-name') && row) row.dataset.name = text;
+        if (cell.classList.contains('store-county') && row) row.dataset.county = text;
+        if (cell.classList.contains('store-address') && row) row.dataset.addr = text;
+        incrementChangeCount();
+        showToast('已儲存修改內容', 'success');
+      }
+    };
+  }
+
+  // ===== Apply Stored Overrides =====
   async function applyAllStoredOverrides() {
     try {
       const records = await getAllDBRecords();
@@ -400,7 +750,7 @@
           renderCellPhotos(cell, rec.photos);
         }
       });
-      console.log('[Outdoor Admin] 已套用 ' + records.length + ' 筆本機自訂圖檔記錄');
+      console.log('[Outdoor Admin] 已套用 ' + records.length + ' 筆自訂圖檔記錄');
     } catch (err) {
       console.warn('[Outdoor Admin] 讀取 IndexedDB 失敗:', err);
     }
@@ -426,14 +776,21 @@
       loginBtn.classList.add('active-admin');
     }
 
-    // Enable draggable on all items
+    // Enable draggable and rotation on all items
     document.querySelectorAll('.photo-item').forEach(item => {
       item.setAttribute('draggable', 'true');
       bindPhotoItemDragEvents(item);
     });
 
+    // Enable contenteditable on editable text cells
+    document.querySelectorAll('.editable-cell').forEach(cell => {
+      if (!cell.classList.contains('col-new') && !cell.classList.contains('ad-type')) {
+        cell.setAttribute('contenteditable', 'true');
+      }
+    });
+
     if (showNotice) {
-      showToast('歡迎進入管理者模式！可拖曳移動圖片、桌面拖入新圖、點 ✕ 刪除', 'success');
+      showToast('歡迎進入管理者模式！所有欄位皆可點擊編輯、支援版位增刪與圖片旋轉', 'success');
     }
   }
 
@@ -453,6 +810,10 @@
 
     document.querySelectorAll('.photo-item').forEach(item => {
       item.removeAttribute('draggable');
+    });
+
+    document.querySelectorAll('.editable-cell').forEach(cell => {
+      cell.removeAttribute('contenteditable');
     });
 
     showToast('已登出管理者模式', 'info');
@@ -590,6 +951,41 @@
     if (publishBtn) {
       publishBtn.addEventListener('click', handlePublishToGitHub);
     }
+
+    // Lightbox Rotation Buttons
+    const lbRotLeft = document.getElementById('lightbox-rot-left');
+    const lbRotRight = document.getElementById('lightbox-rot-right');
+    const lbImg = document.getElementById('lightbox-img');
+
+    if (lbRotLeft && lbImg) {
+      lbRotLeft.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleLightboxRotate(-90);
+      });
+    }
+    if (lbRotRight && lbImg) {
+      lbRotRight.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleLightboxRotate(90);
+      });
+    }
+  }
+
+  function handleLightboxRotate(delta) {
+    const lbImg = document.getElementById('lightbox-img');
+    if (!lbImg) return;
+
+    let cur = parseInt(lbImg.getAttribute('data-rotate') || '0', 10);
+    cur = (cur + delta + 360) % 360;
+    lbImg.setAttribute('data-rotate', cur);
+    lbImg.style.transform = cur ? 'rotate(' + cur + 'deg)' : '';
+
+    if (currentLightboxImgEl) {
+      applyRotationToImg(currentLightboxImgEl, cur);
+      const cell = currentLightboxImgEl.closest('.photo-cell');
+      if (cell) persistCell(cell);
+      showToast('已旋轉大圖至 ' + cur + '° (原圖已同步)', 'info');
+    }
   }
 
   // ===== Publish to GitHub Pages via REST API =====
@@ -626,7 +1022,6 @@
         'Content-Type': 'application/json'
       };
 
-      // Check current index.html on GitHub to get SHA
       const getFileRes = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/index.html', { headers });
       if (!getFileRes.ok) {
         throw new Error('無法取得 GitHub index.html 資訊 (HTTP ' + getFileRes.status + ')');
@@ -672,7 +1067,6 @@
             throw new Error('圖檔 ' + filename + ' 上傳失敗 (HTTP ' + putImgRes.status + ')');
           }
 
-          // Replace local img src with uploaded relative path
           imgEl.setAttribute('src', filename);
           imgEl.setAttribute('data-full', filename);
           if (cell) await persistCell(cell);
@@ -686,7 +1080,6 @@
       statusText.textContent = '3/4 正在編譯最新表格配置...';
       log('建構乾淨發布版本 HTML...');
 
-      // Clone document to clean admin classes
       const cloneDoc = document.documentElement.cloneNode(true);
       cloneDoc.classList.remove('admin-mode');
       const cloneBody = cloneDoc.querySelector('body');
@@ -705,7 +1098,7 @@
         cloneLoginBtn.classList.remove('active-admin');
       }
 
-      // Remove draggable attributes and drag classes
+      // Remove temporary attributes
       cloneDoc.querySelectorAll('.photo-item').forEach(item => {
         item.removeAttribute('draggable');
         item.classList.remove('dragging');
@@ -713,10 +1106,12 @@
       cloneDoc.querySelectorAll('.photo-cell').forEach(cell => {
         cell.classList.remove('drag-over');
       });
+      cloneDoc.querySelectorAll('.editable-cell').forEach(cell => {
+        cell.removeAttribute('contenteditable');
+      });
 
       const fullHtml = '<!DOCTYPE html>\n' + cloneDoc.outerHTML;
 
-      // Encode UTF-8 content to base64 properly
       const encoder = new TextEncoder();
       const uint8 = encoder.encode(fullHtml);
       let binary = '';
@@ -733,7 +1128,7 @@
         method: 'PUT',
         headers,
         body: JSON.stringify({
-          message: 'chore(admin): 管理者更新門市照片配置 (' + new Date().toLocaleString('zh-TW') + ')',
+          message: 'chore(admin): 管理者更新門市照片與版位欄位 (' + new Date().toLocaleString('zh-TW') + ')',
           content: b64Content,
           sha: currentSha
         })
@@ -782,12 +1177,19 @@
       bindCellDropEvents(cell);
     });
 
-    // 3. Apply Local Customizations from IndexedDB
+    // 3. Bind Editable Cells
+    bindEditableCells();
+
+    // 4. Bind Location Controls (Add/Delete)
+    bindLocationControls();
+
+    // 5. Apply Local Customizations from IndexedDB
     await applyAllStoredOverrides();
 
-    // 4. Re-bind Drag events on existing items
+    // 6. Bind Existing Items: Drag, Delete, Rotate
     document.querySelectorAll('.photo-item').forEach(item => {
       bindPhotoItemDragEvents(item);
+
       const delBtn = item.querySelector('.photo-del-btn');
       if (delBtn) {
         delBtn.addEventListener('click', (e) => {
@@ -795,9 +1197,32 @@
           handleDeletePhoto(item);
         });
       }
+
+      const rotL = item.querySelector('.photo-rot-left');
+      if (rotL) {
+        rotL.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleRotatePhoto(item, -90);
+        });
+      }
+
+      const rotR = item.querySelector('.photo-rot-right');
+      if (rotR) {
+        rotR.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleRotatePhoto(item, 90);
+        });
+      }
+
+      const img = item.querySelector('img');
+      if (img) {
+        img.addEventListener('click', () => {
+          openLightboxForImg(img);
+        });
+      }
     });
 
-    // 5. Check if already logged in this session
+    // 7. Check if already logged in this session
     checkSessionAuth();
   }
 

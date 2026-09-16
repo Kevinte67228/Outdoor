@@ -929,3 +929,201 @@ tr.hidden-row { display: none !important; }
 .toast-error { border-left: 4px solid #d63031; }
 .toast-info { border-left: 4px solid #0984e3; }
 
+/* ===== Editable Cells in Admin Mode ===== */
+.admin-mode .editable-cell {
+  cursor: text;
+  transition: background 0.15s ease, outline 0.15s ease;
+  position: relative;
+}
+
+.admin-mode .editable-cell:hover {
+  background-color: rgba(9, 132, 227, 0.08) !important;
+  outline: 1px dashed #0984e3;
+}
+
+.admin-mode .editable-cell:focus {
+  background-color: #fff !important;
+  outline: 2px solid #0984e3 !important;
+  box-shadow: 0 0 8px rgba(9, 132, 227, 0.35);
+  z-index: 2;
+}
+
+.admin-mode .col-new,
+.admin-mode .ad-type {
+  cursor: pointer !important;
+}
+
+.admin-mode .badge-new-col:hover,
+.admin-mode .col-new .no-data:hover,
+.admin-mode .type-badge:hover {
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* ===== Location (BB) Add and Delete Buttons ===== */
+.bb-location {
+  position: relative;
+  min-width: 55px;
+}
+
+.bb-text {
+  font-weight: bold;
+  display: inline-block;
+  min-width: 16px;
+}
+
+.loc-del-btn {
+  display: none;
+}
+
+.admin-mode .loc-del-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ff7675;
+  color: #fff;
+  border: none;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  margin-left: 4px;
+  vertical-align: middle;
+  transition: all 0.15s;
+}
+
+.admin-mode .loc-del-btn:hover {
+  background: #d63031;
+  transform: scale(1.2);
+}
+
+.btn-add-loc {
+  display: none;
+}
+
+.admin-mode .btn-add-loc {
+  display: block;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 6px;
+  font-size: 11px;
+  background: #00b894;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 5px;
+  white-space: nowrap;
+  font-weight: 600;
+  transition: all 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.admin-mode .btn-add-loc:hover {
+  background: #00a382;
+  transform: scale(1.05);
+}
+
+/* ===== Photo Rotation Buttons ===== */
+.photo-rot-btn {
+  display: none;
+}
+
+.admin-mode .photo-rot-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #0984e3;
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  z-index: 10;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.admin-mode .photo-rot-left {
+  top: -6px;
+  left: -6px;
+}
+
+.admin-mode .photo-rot-right {
+  bottom: -6px;
+  left: -6px;
+}
+
+.admin-mode .photo-rot-btn:hover {
+  background: #00cec9;
+  transform: scale(1.2);
+}
+
+/* Rotated Image Styling */
+.thumb[data-rotate="90"] {
+  transform: rotate(90deg) scale(0.68);
+}
+.thumb[data-rotate="180"] {
+  transform: rotate(180deg);
+}
+.thumb[data-rotate="270"] {
+  transform: rotate(270deg) scale(0.68);
+}
+
+.thumb[data-rotate="90"]:hover {
+  transform: rotate(90deg) scale(0.74);
+}
+.thumb[data-rotate="180"]:hover {
+  transform: rotate(180deg) scale(1.06);
+}
+.thumb[data-rotate="270"]:hover {
+  transform: rotate(270deg) scale(0.74);
+}
+
+/* Lightbox Toolbar & Rotation */
+.lightbox-toolbar {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.lb-rot-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.22);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.lb-rot-btn:hover {
+  background: rgba(255,255,255,0.4);
+  transform: translateY(-1px);
+}
+
+#lightbox-img {
+  transition: transform 0.25s ease;
+}
+
+#lightbox-img[data-rotate="90"] {
+  transform: rotate(90deg);
+}
+#lightbox-img[data-rotate="180"] {
+  transform: rotate(180deg);
+}
+#lightbox-img[data-rotate="270"] {
+  transform: rotate(270deg);
+}
+
+

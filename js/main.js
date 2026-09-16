@@ -3,17 +3,42 @@ document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('lightbox-overlay');
   const lightboxImg = document.getElementById('lightbox-img');
   const lightboxCaption = document.getElementById('lightbox-caption');
+  const lbRotLeft = document.getElementById('lightbox-rot-left');
+  const lbRotRight = document.getElementById('lightbox-rot-right');
 
   document.querySelectorAll('.thumb').forEach(thumb => {
     thumb.addEventListener('click', (e) => {
       const src = e.target.getAttribute('data-full') || e.target.src;
       const caption = e.target.getAttribute('data-caption') || '';
+      const rot = parseInt(e.target.getAttribute('data-rotate') || '0', 10);
       lightboxImg.src = src;
+      lightboxImg.setAttribute('data-rotate', rot);
+      lightboxImg.style.transform = rot ? 'rotate(' + rot + 'deg)' : '';
       lightboxCaption.textContent = caption;
       overlay.classList.add('active');
       document.body.style.overflow = 'hidden';
     });
   });
+
+  if (lbRotLeft && lightboxImg) {
+    lbRotLeft.addEventListener('click', (e) => {
+      e.stopPropagation();
+      let rot = parseInt(lightboxImg.getAttribute('data-rotate') || '0', 10);
+      rot = (rot - 90 + 360) % 360;
+      lightboxImg.setAttribute('data-rotate', rot);
+      lightboxImg.style.transform = rot ? 'rotate(' + rot + 'deg)' : '';
+    });
+  }
+
+  if (lbRotRight && lightboxImg) {
+    lbRotRight.addEventListener('click', (e) => {
+      e.stopPropagation();
+      let rot = parseInt(lightboxImg.getAttribute('data-rotate') || '0', 10);
+      rot = (rot + 90) % 360;
+      lightboxImg.setAttribute('data-rotate', rot);
+      lightboxImg.style.transform = rot ? 'rotate(' + rot + 'deg)' : '';
+    });
+  }
 
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay || e.target.classList.contains('lightbox-close')) {
@@ -29,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.classList.remove('active');
     document.body.style.overflow = '';
     lightboxImg.src = '';
+    lightboxImg.style.transform = '';
   }
 
   // ===== Search & Filter =====
