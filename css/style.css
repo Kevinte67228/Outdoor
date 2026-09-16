@@ -107,7 +107,7 @@ body {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 1950px;
+  min-width: 2120px;
   font-size: 13px;
 }
 
@@ -182,6 +182,16 @@ body {
 .store-county {
   white-space: nowrap;
   min-width: 75px;
+}
+
+.store-notes {
+  text-align: left !important;
+  min-width: 140px;
+  max-width: 240px;
+  font-size: 12px;
+  line-height: 1.45;
+  word-break: break-word;
+  color: #2d3436;
 }
 
 

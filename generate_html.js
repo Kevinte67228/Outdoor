@@ -134,6 +134,7 @@ let html = `<!DOCTYPE html>
           <th>廣告海報<br><span class="th-sub">(視覺設計圖)</span></th>
           <th>2026現況<br><span class="th-sub">(現況照片)</span></th>
           <th>定位截圖<br><span class="th-sub">(Google地圖)</span></th>
+          <th>備註</th>
         </tr>
       </thead>
       <tbody>
@@ -186,7 +187,7 @@ entries.forEach((e) => {
       // 4. 縣市 (根據地址)
       html += `          <td class="store-county editable-cell" rowspan="${rowCount}">${county !== '—' ? '<span class="badge-county">' + county + '</span>' : '<span class="no-data">—</span>'}</td>\n`;
       // 5. 地址
-      html += `          <td class="store-address editable-cell" rowspan="${rowCount}">${addr}${e.notes ? '<br><span class="note">📌 ' + e.notes + '</span>' : ''}</td>\n`;
+      html += `          <td class="store-address editable-cell" rowspan="${rowCount}">${addr}</td>\n`;
       // 6. 廣告類型
       html += `          <td class="ad-type editable-cell" rowspan="${rowCount}"><span class="type-badge ${badgeClass}" title="點擊切換廣告類型">${adType}</span></td>\n`;
     }
@@ -277,7 +278,7 @@ entries.forEach((e) => {
     }
     html += `          </td>\n`;
 
-    // 18. 定位截圖 (Google地圖, Merged, 最後一欄)
+    // 18. 定位截圖 (Google地圖, Merged)
     if (isFirst) {
       html += `          <td class="photo-cell" rowspan="${rowCount}" data-col="map" data-store="${code}" data-adtype="${adType}">\n`;
       if (googleMaps.length > 0) {
@@ -295,6 +296,13 @@ entries.forEach((e) => {
         html += `            <span class="no-data">—</span>\n`;
       }
       html += `          </td>\n`;
+
+      // 19. 備註 (Merged, 最後一欄)
+      let noteText = (e.notes || '').trim();
+      if (noteText.startsWith('備註:') || noteText.startsWith('備註：')) {
+        noteText = noteText.replace(/^備註[:：]\s*/, '');
+      }
+      html += `          <td class="store-notes editable-cell" rowspan="${rowCount}">${noteText ? noteText : '<span class="no-data">—</span>'}</td>\n`;
     }
 
     html += `        </tr>\n`;

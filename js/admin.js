@@ -14,7 +14,7 @@
 
   const ADMIN_PWD = '291';
   const DB_NAME = 'OutdoorAdminDB';
-  const DB_VERSION = 3;
+  const DB_VERSION = 4;
   const STORE_PHOTOS = 'photos_override';
   const STORE_TABLE = 'table_state';
   const GITHUB_REPO = 'Kevinte67228/Outdoor';
@@ -493,7 +493,7 @@
     nextLoc = inputLoc.trim().toUpperCase();
 
     // Increment rowspan on all merged cells in firstRow
-    const mergedCells = firstRow.querySelectorAll('.col-new, .store-code, .store-name, .store-county, .store-address, .ad-type, .photo-cell[data-col="exterior"], .photo-cell[data-col="visual"], .photo-cell[data-col="map"]');
+    const mergedCells = firstRow.querySelectorAll('.col-new, .store-code, .store-name, .store-county, .store-address, .ad-type, .photo-cell[data-col="exterior"], .photo-cell[data-col="visual"], .photo-cell[data-col="map"], .store-notes');
     mergedCells.forEach(cell => {
       const cur = parseInt(cell.getAttribute('rowspan') || '1', 10);
       cell.setAttribute('rowspan', cur + 1);
@@ -565,6 +565,7 @@
       const exteriorCell = firstRow.querySelector('.photo-cell[data-col="exterior"]');
       const visualCell = firstRow.querySelector('.photo-cell[data-col="visual"]');
       const mapCell = firstRow.querySelector('.photo-cell[data-col="map"]');
+      const notesCell = firstRow.querySelector('.store-notes');
 
       mergedCells.reverse().forEach(cell => {
         secondRow.insertBefore(cell, secondRow.firstChild);
@@ -577,8 +578,9 @@
       }
 
       if (mapCell) secondRow.appendChild(mapCell);
+      if (notesCell) secondRow.appendChild(notesCell);
 
-      secondRow.querySelectorAll('.col-new, .store-code, .store-name, .store-county, .store-address, .ad-type, .photo-cell[data-col="exterior"], .photo-cell[data-col="visual"], .photo-cell[data-col="map"]').forEach(cell => {
+      secondRow.querySelectorAll('.col-new, .store-code, .store-name, .store-county, .store-address, .ad-type, .photo-cell[data-col="exterior"], .photo-cell[data-col="visual"], .photo-cell[data-col="map"], .store-notes').forEach(cell => {
         const cur = parseInt(cell.getAttribute('rowspan') || '2', 10);
         cell.setAttribute('rowspan', Math.max(cur - 1, 1));
       });
@@ -586,7 +588,7 @@
       rowToDelete.remove();
 
     } else {
-      firstRow.querySelectorAll('.col-new, .store-code, .store-name, .store-county, .store-address, .ad-type, .photo-cell[data-col="exterior"], .photo-cell[data-col="visual"], .photo-cell[data-col="map"]').forEach(cell => {
+      firstRow.querySelectorAll('.col-new, .store-code, .store-name, .store-county, .store-address, .ad-type, .photo-cell[data-col="exterior"], .photo-cell[data-col="visual"], .photo-cell[data-col="map"], .store-notes').forEach(cell => {
         const cur = parseInt(cell.getAttribute('rowspan') || '2', 10);
         cell.setAttribute('rowspan', Math.max(cur - 1, 1));
       });
@@ -740,6 +742,10 @@
     try {
       const savedHtml = await getTableSnapshotFromDB();
       if (savedHtml && savedHtml.trim().length > 100) {
+        if (!savedHtml.includes('store-notes')) {
+          console.log('[Outdoor Admin] 檢測到表格欄位結構升級 (新增備註欄位)，自動同步為最新配置');
+          return;
+        }
         const tbody = document.querySelector('#main-table tbody');
         if (tbody) {
           tbody.innerHTML = savedHtml;
