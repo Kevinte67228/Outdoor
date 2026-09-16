@@ -753,12 +753,13 @@
       okBtn.style.display = 'inline-block';
       if (visitLink) visitLink.style.display = 'inline-block';
 
-      // Reset change counter
+      // Reset change counter & clear local uncommitted DB since changes are now live on GitHub
       changeCount = 0;
       const countEl = document.getElementById('admin-change-count');
       const badgeEl = document.getElementById('admin-change-badge');
       if (badgeEl) badgeEl.style.display = 'none';
       if (countEl) countEl.textContent = '0';
+      await clearAllDB();
 
     } catch (err) {
       spinner.style.display = 'none';
