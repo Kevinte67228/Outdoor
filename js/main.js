@@ -3,14 +3,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('lightbox-overlay');
   const lightboxImg = document.getElementById('lightbox-img');
   const lightboxCaption = document.getElementById('lightbox-caption');
-  const lbRotLeft = document.getElementById('lightbox-rot-left');
-  const lbRotRight = document.getElementById('lightbox-rot-right');
 
   document.querySelectorAll('.thumb').forEach(thumb => {
     thumb.addEventListener('click', (e) => {
       const src = e.target.getAttribute('data-full') || e.target.src;
       const caption = e.target.getAttribute('data-caption') || '';
       const rot = parseInt(e.target.getAttribute('data-rotate') || '0', 10);
+      window.currentLightboxSourceImg = e.target;
       lightboxImg.src = src;
       lightboxImg.setAttribute('data-rotate', rot);
       lightboxImg.style.transform = rot ? 'rotate(' + rot + 'deg)' : '';
@@ -19,26 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.style.overflow = 'hidden';
     });
   });
-
-  if (lbRotLeft && lightboxImg) {
-    lbRotLeft.addEventListener('click', (e) => {
-      e.stopPropagation();
-      let rot = parseInt(lightboxImg.getAttribute('data-rotate') || '0', 10);
-      rot = (rot - 90 + 360) % 360;
-      lightboxImg.setAttribute('data-rotate', rot);
-      lightboxImg.style.transform = rot ? 'rotate(' + rot + 'deg)' : '';
-    });
-  }
-
-  if (lbRotRight && lightboxImg) {
-    lbRotRight.addEventListener('click', (e) => {
-      e.stopPropagation();
-      let rot = parseInt(lightboxImg.getAttribute('data-rotate') || '0', 10);
-      rot = (rot + 90) % 360;
-      lightboxImg.setAttribute('data-rotate', rot);
-      lightboxImg.style.transform = rot ? 'rotate(' + rot + 'deg)' : '';
-    });
-  }
 
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay || e.target.classList.contains('lightbox-close')) {
@@ -55,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.style.overflow = '';
     lightboxImg.src = '';
     lightboxImg.style.transform = '';
+    window.currentLightboxSourceImg = null;
   }
 
   // ===== Search & Filter =====
@@ -68,26 +48,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Group rows by merged item block (row with store-code)
   const entryGroups = [];
-  let currentGroup = null;
 
-  rows.forEach(row => {
-    const storeCodeCell = row.querySelector('.store-code');
-    if (storeCodeCell) {
-      currentGroup = {
-        storeCode: row.dataset.store || '',
-        storeName: row.dataset.name || '',
-        county: row.dataset.county || '',
-        address: row.dataset.addr || '',
-        type: row.dataset.type || '',
-        isNew: row.dataset.new || '',
-        originalIndex: entryGroups.length,
-        rows: [row]
-      };
-      entryGroups.push(currentGroup);
-    } else if (currentGroup) {
-      currentGroup.rows.push(row);
-    }
-  });
+  function buildEntryGroups() {
+    entryGroups.length = 0;
+    let currentGroup = null;
+    const currentRows = table.querySelectorAll('tbody tr');
+    currentRows.forEach(row => {
+      const storeCodeCell = row.querySelector('.store-code');
+      if (storeCodeCell) {
+        currentGroup = {
+          storeCode: row.dataset.store || storeCodeCell.innerText.trim(),
+          storeName: row.dataset.name || (row.querySelector('.store-name') ? row.querySelector('.store-name').innerText.trim() : ''),
+          county: row.dataset.county || (row.querySelector('.store-county') ? row.querySelector('.store-county').innerText.trim() : ''),
+          address: row.dataset.addr || (row.querySelector('.store-address') ? row.querySelector('.store-address').innerText.trim() : ''),
+          type: row.dataset.type || (row.querySelector('.ad-type') ? row.querySelector('.ad-type').innerText.trim() : ''),
+          isNew: row.dataset.new || (row.querySelector('.badge-new-col') ? '新增' : ''),
+          originalIndex: entryGroups.length,
+          rows: [row]
+        };
+        entryGroups.push(currentGroup);
+      } else if (currentGroup) {
+        currentGroup.rows.push(row);
+      }
+    });
+  }
+
+  window.reindexFilterGroups = function() {
+    buildEntryGroups();
+    applyFilter();
+  };
+
+  buildEntryGroups();
 
   function applyFilter() {
     const query = searchInput.value.toLowerCase().trim();

@@ -68,6 +68,7 @@ let html = `<!DOCTYPE html>
         <span id="admin-change-badge" class="change-badge" style="display:none;">已變更 <strong id="admin-change-count">0</strong> 處</span>
       </div>
       <div class="admin-actions">
+        <button type="button" id="btn-admin-save" class="btn-action btn-save" title="將當前所有修改（文字、版位、圖片）暫存至本機資料庫">💾 儲存變更</button>
         <button type="button" id="btn-admin-publish" class="btn-action btn-publish" title="將當前修改直接提交發布至 GitHub Pages，讓所有使用者皆可看到">🚀 發布更新至線上</button>
         <button type="button" id="btn-admin-export" class="btn-action btn-secondary" title="匯出本機所有圖片調整設定為 JSON 檔案">📥 匯出備份</button>
         <button type="button" id="btn-admin-import" class="btn-action btn-secondary" title="匯入先前備份的 JSON 設定">📤 匯入備份</button>

@@ -1087,12 +1087,31 @@ tr.hidden-row { display: none !important; }
   transform: rotate(270deg) scale(0.74);
 }
 
-/* Lightbox Toolbar & Rotation */
+/* Lightbox Toolbar & Rotation - Hidden for regular users, ONLY visible in Admin Mode */
 .lightbox-toolbar {
-  display: flex;
+  display: none !important;
+}
+
+.admin-mode .lightbox-toolbar {
+  display: flex !important;
   justify-content: center;
   gap: 12px;
   margin-top: 10px;
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #0984e3, #00cec9);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(9, 132, 227, 0.4);
+}
+
+.btn-save:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(9, 132, 227, 0.6);
+}
+
+.change-badge.saved {
+  background: #00b894 !important;
 }
 
 .lb-rot-btn {
@@ -1125,5 +1144,80 @@ tr.hidden-row { display: none !important; }
 #lightbox-img[data-rotate="270"] {
   transform: rotate(270deg);
 }
+
+/* Inline Editable Cells Styling in Admin Mode */
+.admin-mode .editable-cell[contenteditable="true"] {
+  outline: 1px dashed rgba(9, 132, 227, 0.45);
+  outline-offset: -2px;
+  cursor: text;
+  transition: background-color 0.15s, outline-color 0.15s;
+}
+.admin-mode .editable-cell[contenteditable="true"]:hover {
+  background-color: rgba(9, 132, 227, 0.08);
+  outline-color: #0984e3;
+}
+.admin-mode .editable-cell[contenteditable="true"]:focus {
+  outline: 2px solid #0984e3 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 6px rgba(9, 132, 227, 0.35);
+}
+.admin-mode .col-new,
+.admin-mode .ad-type {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s;
+}
+.admin-mode .col-new:hover,
+.admin-mode .ad-type:hover {
+  background-color: rgba(9, 132, 227, 0.1);
+}
+.admin-mode .bb-location .bb-text[contenteditable="true"] {
+  display: inline-block;
+  min-width: 14px;
+  border-bottom: 1px dashed #0984e3;
+  cursor: text;
+}
+.loc-del-btn,
+.btn-add-loc {
+  display: none;
+}
+.admin-mode .loc-del-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: #d63031;
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.admin-mode .loc-del-btn:hover {
+  background: #ff4757;
+  transform: scale(1.15);
+}
+.admin-mode .btn-add-loc {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #00b894;
+  color: #fff;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.admin-mode .btn-add-loc:hover {
+  background: #00cec9;
+  transform: scale(1.05);
+}
+
 
 
