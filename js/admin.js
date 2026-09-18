@@ -1,23 +1,35 @@
 /**
- * Outdoor Admin Module
+ * Outdoor Admin Module (with UAT & Production Dual-Environment Support)
  * 1. 密碼驗證 (291)
- * 2. 圖片拖曳 (跨欄位 A->B 移動 & 桌面拖入)
- * 3. 圖片刪除 & 向左/向右 90 度旋轉 (縮圖與大圖燈箱雙向同步)
- * 4. 全欄位即時編輯 (店碼、店名、縣市、地址、類型、BB代碼、規格尺寸、租金等)
- * 5. 動態版位增刪 (既有 ABC 擴展 D 版位、或刪除特定版位)
- * 6. 本機資料庫全表格持久化 (IndexedDB 全自動儲存 + 💾 儲存變更按鈕)
- * 7. GitHub Pages 一鍵發布
+ * 2. 環境感知：自動偵測 UAT 測試站 (Outdoor-UAT) 與 正式站 (Outdoor)
+ * 3. 圖片拖曳 (跨欄位 A->B 移動 & 桌面拖入)
+ * 4. 圖片刪除 & 向左/向右 90 度旋轉 (縮圖與大圖燈箱雙向同步)
+ * 5. 全欄位即時編輯 (店碼、店名、縣市、地址、類型、BB代碼、規格尺寸、租金、備註等)
+ * 6. 動態版位增刪 (既有 ABC 擴展 D 版位、或刪除特定版位)
+ * 7. 本機資料庫全表格持久化 (UAT 與 Prod 獨立 IndexedDB + 💾 儲存變更按鈕)
+ * 8. 兩階段發布：
+ *    - 在 UAT 環境：可「發布更新至 UAT」或「🌟 一鍵發布至正式版 (Prod)」
+ *    - 在 Prod 環境：可「發布更新至線上」或「🧪 前往 UAT 測試站」
  */
 
 (function() {
   'use strict';
 
+  // ===== Environment Detection =====
+  const IS_UAT = window.location.hostname.includes('github.io')
+    ? window.location.pathname.toLowerCase().includes('/outdoor-uat')
+    : (window.location.search.includes('env=uat') || document.title.includes('UAT'));
+
+  const REPO_PROD = 'Kevinte67228/Outdoor';
+  const REPO_UAT = 'Kevinte67228/Outdoor-UAT';
+  const CURRENT_REPO = IS_UAT ? REPO_UAT : REPO_PROD;
+  const CURRENT_ENV_LABEL = IS_UAT ? 'UAT 測試環境' : '正式環境 (Production)';
+
   const ADMIN_PWD = '291';
-  const DB_NAME = 'OutdoorAdminDB';
+  const DB_NAME = IS_UAT ? 'OutdoorAdminDB_UAT' : 'OutdoorAdminDB';
   const DB_VERSION = 4;
   const STORE_PHOTOS = 'photos_override';
   const STORE_TABLE = 'table_state';
-  const GITHUB_REPO = 'Kevinte67228/Outdoor';
 
   // GitHub Personal Access Token (自動解密，無須手動輸入阻礙流程)
   function getGitHubToken() {
@@ -32,6 +44,42 @@
   let changeCount = 0;
   let draggedItem = null;
   let draggedSourceCell = null;
+
+  // ===== UAT UI Setup =====
+  function setupUatUi() {
+    if (!IS_UAT) return;
+
+    // 1. Update Document Title
+    if (!document.title.includes('UAT')) {
+      document.title = '[UAT 測試環境] ' + document.title;
+    }
+
+    // 2. Add badge to header H1
+    const h1 = document.querySelector('.page-header h1');
+    if (h1 && !h1.querySelector('.badge-env-uat')) {
+      const badge = document.createElement('span');
+      badge.className = 'badge-env-uat';
+      badge.textContent = '🧪 UAT 測試站';
+      h1.appendChild(badge);
+    }
+
+    // 3. Insert Top Announcement Banner
+    if (!document.querySelector('.uat-banner')) {
+      const banner = document.createElement('div');
+      banner.className = 'uat-banner';
+      banner.innerHTML = 
+        '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">' +
+          '<span class="uat-pill">🧪 UAT 測試環境</span>' +
+          '<span>此網站為測試驗收站，所有操作與修改皆獨立於正式版；待確認無誤後，請於管理者模式點擊「🌟 一鍵發布至正式版」。</span>' +
+        '</div>' +
+        '<a href="https://kevinte67228.github.io/Outdoor/" target="_blank" class="uat-btn-prod">🌐 開啟正式版 (Production)</a>';
+      
+      const header = document.querySelector('.page-header');
+      if (header && header.parentNode) {
+        header.parentNode.insertBefore(banner, header);
+      }
+    }
+  }
 
   // ===== IndexedDB Utilities =====
   function openDB() {
@@ -102,7 +150,7 @@
     if (showNotification) {
       changeCount = 0;
       updateChangeBadge(true);
-      showToast('✅ 所有修改已成功儲存至本機！隨時可點擊「🚀 發布更新至線上」發布給其他同仁。', 'success');
+      showToast('✅ 所有修改已成功儲存至本機 (' + (IS_UAT ? 'UAT' : '正式版') + ')！', 'success');
     }
   }
 
@@ -122,7 +170,7 @@
     badge.style.display = 'inline-flex';
     if (isSaved) {
       badge.className = 'change-badge saved';
-      badge.innerHTML = '✅ 已儲存至本機';
+      badge.innerHTML = '✅ 已儲存至本機 (' + (IS_UAT ? 'UAT' : '正式') + ')';
     } else {
       badge.className = 'change-badge';
       badge.innerHTML = '● 尚未發布 (已變更 <strong id="admin-change-count">' + changeCount + '</strong> 處)';
@@ -843,8 +891,34 @@
 
     const loginBtn = document.getElementById('admin-login-btn');
     if (loginBtn) {
-      loginBtn.innerHTML = '🔓 管理者中';
+      loginBtn.innerHTML = IS_UAT ? '🔓 UAT 管理中' : '🔓 管理者中';
       loginBtn.classList.add('active-admin');
+    }
+
+    const statusBadge = document.getElementById('admin-status-badge');
+    const statusTip = document.getElementById('admin-status-tip');
+    const publishBtn = document.getElementById('btn-admin-publish');
+    const promoteBtn = document.getElementById('btn-admin-promote');
+    const uatLink = document.getElementById('link-admin-uat');
+
+    if (IS_UAT) {
+      if (statusBadge) statusBadge.innerHTML = '🧪 UAT 管理者模式';
+      if (statusTip) statusTip.innerHTML = '💡 支援編輯與拖曳；確認無誤後可一鍵同步至正式版';
+      if (publishBtn) {
+        publishBtn.innerHTML = '🚀 發布更新至 UAT';
+        publishBtn.title = '發布更新至 Outdoor-UAT 測試環境';
+      }
+      if (promoteBtn) promoteBtn.style.display = 'inline-block';
+      if (uatLink) uatLink.style.display = 'none';
+    } else {
+      if (statusBadge) statusBadge.innerHTML = '🛡️ 正式環境 管理者模式';
+      if (statusTip) statusTip.innerHTML = '💡 正式生產環境；建議重大變更先至 UAT 測試驗收';
+      if (publishBtn) {
+        publishBtn.innerHTML = '🚀 發布更新至線上';
+        publishBtn.title = '發布更新至正式生產環境';
+      }
+      if (promoteBtn) promoteBtn.style.display = 'none';
+      if (uatLink) uatLink.style.display = 'inline-block';
     }
 
     document.querySelectorAll('.photo-item').forEach(item => {
@@ -863,7 +937,12 @@
     });
 
     if (showNotice) {
-      showToast('歡迎進入管理者模式！修改後可點擊「💾 儲存變更」，滿意後再點「🚀 發布更新至線上」', 'success');
+      showToast(
+        IS_UAT
+          ? '歡迎進入 UAT 測試管理者模式！完成測試後可點擊「🌟 一鍵發布至正式版」'
+          : '歡迎進入管理者模式！修改後可點擊「💾 儲存變更」，滿意後再點「🚀 發布更新至線上」',
+        'success'
+      );
     }
   }
 
@@ -971,10 +1050,21 @@
       };
     }
 
-    // 🚀 Publish to GitHub Pages
+    // 🚀 Publish to Current Environment (UAT or PROD)
     const publishBtn = document.getElementById('btn-admin-publish');
     if (publishBtn) {
-      publishBtn.onclick = handlePublishToGitHub;
+      publishBtn.onclick = () => handlePublishToGitHub(CURRENT_REPO, CURRENT_ENV_LABEL);
+    }
+
+    // 🌟 Promote from UAT to Production
+    const promoteBtn = document.getElementById('btn-admin-promote');
+    if (promoteBtn) {
+      promoteBtn.onclick = () => {
+        if (!confirm('🌟 確認要將目前 UAT 的最新狀態直接發布至「正式環境 (Production)」嗎？\n\n發布後，所有同仁與一般使用者將在正式版 (Outdoor) 看到您在 UAT 的最新修改成果！')) {
+          return;
+        }
+        handlePublishToGitHub(REPO_PROD, '正式環境 (Production)');
+      };
     }
 
     // 🔄 Reset Button
@@ -1021,7 +1111,7 @@
         const a = document.createElement('a');
         const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
         a.href = dataStr;
-        a.download = 'outdoor_table_backup_' + dateStr + '.json';
+        a.download = (IS_UAT ? 'outdoor_uat_table_backup_' : 'outdoor_table_backup_') + dateStr + '.json';
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -1055,18 +1145,28 @@
   }
 
   // ===== Publish to GitHub Pages via REST API =====
-  async function handlePublishToGitHub() {
+  async function handlePublishToGitHub(targetRepo, targetLabel) {
+    targetRepo = targetRepo || CURRENT_REPO;
+    targetLabel = targetLabel || CURRENT_ENV_LABEL;
+
     // Save locally first
     await saveTableState(false);
 
     const token = getGitHubToken();
     const syncModal = document.getElementById('sync-modal');
+    const syncModalTitle = document.getElementById('sync-modal-title');
     const spinner = document.getElementById('sync-spinner');
     const statusText = document.getElementById('sync-status-text');
     const logBox = document.getElementById('sync-log-box');
     const okBtn = document.getElementById('sync-modal-ok');
     const visitLink = document.getElementById('sync-visit-link');
     const closeBtn = document.getElementById('sync-modal-close');
+
+    if (syncModalTitle) {
+      syncModalTitle.textContent = (targetRepo === REPO_PROD && IS_UAT)
+        ? '🌟 一鍵發布至正式環境 (Production)'
+        : '🚀 同步發布至 ' + targetLabel;
+    }
 
     syncModal.style.display = 'flex';
     spinner.style.display = 'block';
@@ -1083,8 +1183,8 @@
     }
 
     try {
-      statusText.textContent = '1/4 正在檢查與 GitHub 連線...';
-      log('連線至 GitHub Repository: ' + GITHUB_REPO);
+      statusText.textContent = '1/4 正在檢查與 GitHub 連線 (' + targetLabel + ')...';
+      log('目標儲存庫: ' + targetRepo + ' (' + targetLabel + ')');
 
       const headers = {
         'Authorization': 'Bearer ' + token,
@@ -1092,16 +1192,16 @@
         'Content-Type': 'application/json'
       };
 
-      const getFileRes = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/index.html', { headers });
+      const getFileRes = await fetch('https://api.github.com/repos/' + targetRepo + '/contents/index.html', { headers });
       if (!getFileRes.ok) {
-        throw new Error('無法取得 GitHub index.html 資訊 (HTTP ' + getFileRes.status + ')');
+        throw new Error('無法取得 ' + targetRepo + ' 的 index.html 資訊 (HTTP ' + getFileRes.status + ')');
       }
       const fileData = await getFileRes.json();
       const currentSha = fileData.sha;
-      log('成功取得當前 index.html SHA: ' + currentSha.slice(0, 7), true);
+      log('成功取得 ' + targetRepo + ' 當前 index.html SHA: ' + currentSha.slice(0, 7), true);
 
       // Check for any newly added base64 images from desktop
-      statusText.textContent = '2/4 正在處理圖檔資源...';
+      statusText.textContent = '2/4 正在檢查自訂圖檔資源...';
       const base64Images = [];
       document.querySelectorAll('.photo-cell .photo-item img').forEach(img => {
         const src = img.getAttribute('src') || '';
@@ -1111,7 +1211,7 @@
       });
 
       if (base64Images.length > 0) {
-        log('發現 ' + base64Images.length + ' 張本機新增圖檔，正在上傳至 GitHub images/custom/ ...');
+        log('發現 ' + base64Images.length + ' 張本機新增圖檔，正在同步上傳至 ' + targetRepo + ' images/custom/ ...');
         let upIdx = 0;
         for (const imgEl of base64Images) {
           upIdx++;
@@ -1124,7 +1224,7 @@
           const filename = 'images/custom/' + store + '_' + Date.now() + '_' + upIdx + '.' + ext;
 
           log('上傳圖檔 (' + upIdx + '/' + base64Images.length + '): ' + filename);
-          const putImgRes = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + filename, {
+          const putImgRes = await fetch('https://api.github.com/repos/' + targetRepo + '/contents/' + filename, {
             method: 'PUT',
             headers,
             body: JSON.stringify({
@@ -1147,8 +1247,8 @@
       }
 
       // Prepare updated HTML
-      statusText.textContent = '3/4 正在編譯最新表格配置...';
-      log('建構乾淨發布版本 HTML...');
+      statusText.textContent = '3/4 正在編譯乾淨發布版本...';
+      log('建構發布版本 HTML...');
 
       const cloneDoc = document.documentElement.cloneNode(true);
       cloneDoc.classList.remove('admin-mode');
@@ -1166,6 +1266,16 @@
       if (cloneLoginBtn) {
         cloneLoginBtn.innerHTML = '🔐 管理功能';
         cloneLoginBtn.classList.remove('active-admin');
+      }
+
+      // If pushing to Production, strip all UAT banners and badges
+      if (targetRepo === REPO_PROD) {
+        const uatBanner = cloneDoc.querySelector('.uat-banner');
+        if (uatBanner) uatBanner.remove();
+        const uatBadge = cloneDoc.querySelector('.badge-env-uat');
+        if (uatBadge) uatBadge.remove();
+        const docTitle = cloneDoc.querySelector('title');
+        if (docTitle) docTitle.textContent = '門市戶外廣告看板明細';
       }
 
       // Reset any search/filters and hidden-row classes so published version is clean
@@ -1217,14 +1327,18 @@
       const b64Content = btoa(binary);
 
       // Commit to GitHub
-      statusText.textContent = '4/4 正在將變更提交至 GitHub main 分支...';
-      log('提交 Commit 至 GitHub API...');
+      statusText.textContent = '4/4 正在提交變更至 ' + targetRepo + ' main 分支...';
+      log('提交 Commit 至 ' + targetRepo + ' ...');
 
-      const commitRes = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/index.html', {
+      const commitMsg = (targetRepo === REPO_PROD && IS_UAT)
+        ? 'chore(deploy): 從 UAT 驗收測試站同步推送至正式生產環境 (' + new Date().toLocaleString('zh-TW') + ')'
+        : 'chore(admin): 管理者更新門市圖檔與版位備註 (' + new Date().toLocaleString('zh-TW') + ')';
+
+      const commitRes = await fetch('https://api.github.com/repos/' + targetRepo + '/contents/index.html', {
         method: 'PUT',
         headers,
         body: JSON.stringify({
-          message: 'chore(admin): 管理者更新門市照片與版位欄位 (' + new Date().toLocaleString('zh-TW') + ')',
+          message: commitMsg,
           content: b64Content,
           sha: currentSha
         })
@@ -1236,15 +1350,24 @@
       }
 
       const commitData = await commitRes.json();
-      log('Commit 成功! Commit SHA: ' + (commitData.commit ? commitData.commit.sha.slice(0, 7) : 'OK'), true);
-      log('🎉 GitHub Pages 自動構建已觸發，預計 1-2 分鐘後線上正式生效！', true);
+      log('Commit 成功! SHA: ' + (commitData.commit ? commitData.commit.sha.slice(0, 7) : 'OK'), true);
+      log('🎉 ' + targetLabel + ' 自動構建已觸發，預計 1-2 分鐘後線上正式生效！', true);
 
       spinner.style.display = 'none';
-      statusText.textContent = '✅ 發布成功！所有使用者皆可瀏覽最新成果';
+      statusText.textContent = (targetRepo === REPO_PROD && IS_UAT)
+        ? '🎉 成功發布至正式環境 (Production)！'
+        : '✅ 發布成功！所有使用者皆可瀏覽最新成果';
+      
       okBtn.style.display = 'inline-block';
-      if (visitLink) visitLink.style.display = 'inline-block';
+      if (visitLink) {
+        const destUrl = targetRepo === REPO_PROD 
+          ? 'https://kevinte67228.github.io/Outdoor/'
+          : 'https://kevinte67228.github.io/Outdoor-UAT/';
+        visitLink.href = destUrl;
+        visitLink.textContent = targetRepo === REPO_PROD ? '🌐 開啟正式版網站' : '🌐 開啟 UAT 測試站';
+        visitLink.style.display = 'inline-block';
+      }
 
-      // Keep local table state so the current browser immediately retains the changes
       changeCount = 0;
       updateChangeBadge(true);
 
@@ -1261,16 +1384,19 @@
 
   // ===== Initialize Module =====
   async function init() {
-    // 1. Setup Modals & Buttons
+    // 1. Setup UAT UI (banner, badges, title)
+    setupUatUi();
+
+    // 2. Setup Modals & Buttons
     initModals();
 
-    // 2. Load Stored Table State from IndexedDB (preserves all edits across reloads!)
+    // 3. Load Stored Table State from IndexedDB
     await initTableStateFromDB();
 
-    // 3. Rebind all interactive event listeners
+    // 4. Rebind all interactive event listeners
     rebindAllListeners();
 
-    // 4. Check session authentication
+    // 5. Check session authentication
     checkSessionAuth();
   }
 

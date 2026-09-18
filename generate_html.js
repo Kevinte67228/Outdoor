@@ -63,13 +63,15 @@ let html = `<!DOCTYPE html>
   <div id="admin-toolbar" class="admin-toolbar" style="display: none;">
     <div class="admin-toolbar-inner">
       <div class="admin-status">
-        <span class="admin-badge">🛡️ 管理者模式中</span>
-        <span class="admin-tip">💡 支援跨欄位拖曳、桌面拖入新圖、點 ✕ 刪除</span>
+        <span class="admin-badge" id="admin-status-badge">🛡️ 管理者模式中</span>
+        <span class="admin-tip" id="admin-status-tip">💡 支援跨欄位拖曳、桌面拖入新圖、點 ✕ 刪除</span>
         <span id="admin-change-badge" class="change-badge" style="display:none;">已變更 <strong id="admin-change-count">0</strong> 處</span>
       </div>
       <div class="admin-actions">
         <button type="button" id="btn-admin-save" class="btn-action btn-save" title="將當前所有修改（文字、版位、圖片）暫存至本機資料庫">💾 儲存變更</button>
-        <button type="button" id="btn-admin-publish" class="btn-action btn-publish" title="將當前修改直接提交發布至 GitHub Pages，讓所有使用者皆可看到">🚀 發布更新至線上</button>
+        <button type="button" id="btn-admin-publish" class="btn-action btn-publish" title="將當前修改提交發布至目前環境">🚀 發布更新</button>
+        <button type="button" id="btn-admin-promote" class="btn-action btn-promote" style="display:none;" title="將 UAT 驗證完成之內容直接同步至正式生產環境 (Production)">🌟 一鍵發布至正式版 (Prod)</button>
+        <a id="link-admin-uat" href="https://kevinte67228.github.io/Outdoor-UAT/" target="_blank" class="btn-action btn-secondary" style="display:none; text-decoration:none;" title="前往 UAT 測試環境進行測試">🧪 前往 UAT 測試站</a>
         <button type="button" id="btn-admin-export" class="btn-action btn-secondary" title="匯出本機所有圖片調整設定為 JSON 檔案">📥 匯出備份</button>
         <button type="button" id="btn-admin-import" class="btn-action btn-secondary" title="匯入先前備份的 JSON 設定">📤 匯入備份</button>
         <input type="file" id="admin-import-file" accept=".json" style="display:none;">
